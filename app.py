@@ -2,7 +2,7 @@ from flask import Flask, request, jsonify
 from flaskext.mysql import MySQL
 from passlib.hash import sha1_crypt
 from flask_jwt_extended import (
-    create_access_token, JWTManager,
+    create_access_token, JWTManager, jwt_required, get_jwt_identity,
 )
 
 app = Flask(__name__)
@@ -30,10 +30,11 @@ def sign_in():
         conn.commit()
         user_data = cursor.fetchone()
         if cursor.rowcount > 0:
-
-
-
-        return jsonify(data)
+            if sha1_crypt.verify(password,user_data[2]):
+                access_token = create_access_token(identity=user_data[1])
+                return jsonify(access_token=access_token)
+            return jsonify(message="Incorrect password"), 400
+        return jsonify(data), 400
     return jsonify(message="Missed login or password"),400
 
 
@@ -59,6 +60,7 @@ def sign_up():
 
 
 @app.route("/api/v1/Documents", methods=['GET'])
+@jwt_required()
 def get_documents():
     cursor.execute("SELECT * FROM documents")
     conn.commit()
@@ -81,6 +83,7 @@ def get_documents():
 
 
 @app.route("/api/v1/Documents/<document_id>/Comments", methods=['GET'])
+@jwt_required()
 def get_comments(document_id):
     cursor.execute(f"SELECT has_comments FROM documents WHERE id = '{document_id}'")
     conn.commit()
