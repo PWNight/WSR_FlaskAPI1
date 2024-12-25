@@ -1,8 +1,10 @@
+import calendar
+import time
 from flask import Flask, request, jsonify
 from flaskext.mysql import MySQL
 from passlib.hash import sha1_crypt
 from flask_jwt_extended import (
-    create_access_token, JWTManager, jwt_required, get_jwt_identity,
+    create_access_token, JWTManager, jwt_required
 )
 
 app = Flask(__name__)
@@ -33,9 +35,11 @@ def sign_in():
             if sha1_crypt.verify(password,user_data[2]):
                 access_token = create_access_token(identity=user_data[1])
                 return jsonify(access_token=access_token)
-            return jsonify(message="Incorrect password"), 400
+            timestamp = calendar.timegm(time.gmtime())
+            return jsonify(timestamp=timestamp, message="Неправильный пароль", errorCode="1400"), 400
         return jsonify(data), 400
-    return jsonify(message="Missed login or password"),400
+    timestamp = calendar.timegm(time.gmtime())
+    return jsonify(timestamp=timestamp,message="Отсутствует логин или пароль",errorCode="1400"), 400
 
 
 @app.route("/api/v1/SignUp", methods=['POST'])
@@ -55,8 +59,10 @@ def sign_up():
 
             access_token = create_access_token(identity=login)
             return jsonify(token=access_token)
-        return jsonify(message="User already exists"),400
-    return jsonify(message="Missed login or password"),400
+        timestamp = calendar.timegm(time.gmtime())
+        return jsonify(timestamp=timestamp, message="Пользователь уже существует", errorCode="1400"), 400
+    timestamp = calendar.timegm(time.gmtime())
+    return jsonify(timestamp=timestamp,message="Отсутствует логин или пароль",errorCode="1400"), 400
 
 
 @app.route("/api/v1/Documents", methods=['GET'])
@@ -79,7 +85,8 @@ def get_documents():
             }
             documents.append(document)
         return jsonify(documents)
-    return jsonify(message="Not found"), 404
+    timestamp = calendar.timegm(time.gmtime())
+    return jsonify(timestamp=timestamp,message="Документы не найдены",errorCode="1404"), 404
 
 
 @app.route("/api/v1/Documents/<document_id>/Comments", methods=['GET'])
@@ -112,7 +119,8 @@ def get_comments(document_id):
             }
             comments.append(document)
         return jsonify(comments)
-    return jsonify(message="Not found"), 404
+    timestamp = calendar.timegm(time.gmtime())
+    return jsonify(timestamp=timestamp,message="Комментарии не найдены",errorCode="1404"), 404
 
 
 if __name__ == '__main__':
