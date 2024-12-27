@@ -89,7 +89,29 @@ def get_documents():
     return jsonify(timestamp=timestamp,message="Документы не найдены",errorCode="1404"), 404
 
 
-@app.route("/api/v1/Documents/<document_id>/Comments", methods=['GET'])
+@app.route("/api/v1/Documents/<document_id>/Comment", methods=['POST'])
+@jwt_required()
+def create_comment(document_id):
+    data = request.json
+    if 'text' in data and 'user_id' in data:
+        text = data['text']
+        user_id = data['user_id']
+
+        cursor.execute(f"SELECT * FROM documents WHERE id = '{document_id}'")
+        conn.commit()
+
+        if cursor.rowcount > 0:
+            cursor.execute(f"INSERT INTO documents_comments (fk_document, text, fk_user) VALUES (%s, %s, %s)",
+                           (document_id, text, user_id))
+            conn.commit()
+            return jsonify(message="Успешно")
+        timestamp = calendar.timegm(time.gmtime())
+        return jsonify(timestamp=timestamp,message="Указанный документ не найден",errorCode="1404"), 404
+    timestamp = calendar.timegm(time.gmtime())
+    return jsonify(timestamp=timestamp,message="Отсутствует текст комментария или ID пользователя",errorCode="1400"), 400
+
+
+@app.route("/api/v1/Documents/<document_id>/Comments", methods=['POST'])
 @jwt_required()
 def get_comments(document_id):
     cursor.execute(f"SELECT has_comments FROM documents WHERE id = '{document_id}'")
